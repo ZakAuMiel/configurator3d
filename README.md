@@ -1,4 +1,5 @@
 # configurator3d
+
 This proof of concept showcases a lightweight and interactive 3D product configurator designed for the Schmidt Group. Built using React and Babylon.js v3, the demo allows users to select different furniture models, switch between textures and colors, and trigger animations (such as opening doors or rotating objects) to demonstrate product interactivity.
 
 The main goals of the POC are to:
