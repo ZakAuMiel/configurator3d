@@ -6,10 +6,12 @@ import {
     Color3,
     MultiMaterial,
     SubMesh,
+    Vector3,
   } from "@babylonjs/core";
   
   export function loadCube(scene: Scene) {
-    const box = MeshBuilder.CreateBox("box", { size: 2 }, scene);
+    const box = MeshBuilder.CreateBox("box", { size: 5 }, scene);
+    box.scaling = new Vector3(20, 20, 20);
   
     // Créer 6 matériaux identiques par défaut (rouges)
     const redMat = new StandardMaterial("mat-red", scene);
