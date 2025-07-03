@@ -1,13 +1,20 @@
-# configurator3d
+# 🧰 Configurateur 3D - Babylon.js + React
 
-This proof of concept showcases a lightweight and interactive 3D product configurator designed for the Schmidt Group. Built using React and Babylon.js v3, the demo allows users to select different furniture models, switch between textures and colors, and trigger animations (such as opening doors or rotating objects) to demonstrate product interactivity.
+Ce projet est un démonstrateur de configurateur 3D interactif construit avec **React** et **Babylon.js**.
 
-The main goals of the POC are to:
+Il permet à l'utilisateur de :
+- Changer dynamiquement de modèle 3D (cube ou table)
+- Sélectionner une partie du modèle (face ou mesh enfant)
+- Appliquer une **couleur** ou une **texture réaliste** (bois ou métal) à la partie sélectionnée
 
-    Prove technical feasibility of a modern web-based 3D configurator.
+---
 
-    Demonstrate the ability to load and interact with realistic 3D assets.
+## 🚀 Installation
 
-    Provide a smooth and visually appealing experience suitable for integration into an e-commerce or in-store tablet interface.
+### Étapes (npm requis) :
 
-The setup is optimized for performance and structured to be scalable, with potential future features such as product variants, real-time price updates, and exportable configurations.
+```bash
+git clone ******
+cd configurator3d
+npm install
+npm run dev
