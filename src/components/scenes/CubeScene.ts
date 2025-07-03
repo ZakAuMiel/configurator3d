@@ -6,7 +6,6 @@ import {
     Color3,
     MultiMaterial,
     SubMesh,
-    Vector3,
   } from "@babylonjs/core";
   
   export function loadCube(scene: Scene) {
