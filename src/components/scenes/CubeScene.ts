@@ -10,9 +10,8 @@ import {
   } from "@babylonjs/core";
   
   export function loadCube(scene: Scene) {
-    const box = MeshBuilder.CreateBox("box", { size: 5 }, scene);
-    box.scaling = new Vector3(20, 20, 20);
-  
+    const box = MeshBuilder.CreateBox("box", { size: 75 }, scene);
+    
     // Créer 6 matériaux identiques par défaut (rouges)
     const redMat = new StandardMaterial("mat-red", scene);
     redMat.diffuseColor = Color3.Red();

@@ -1,4 +1,3 @@
-// src/components/BabylonCanvas.tsx
 import { useEffect, useRef } from "react";
 import {
   Engine,
@@ -12,6 +11,7 @@ import {
 } from "@babylonjs/core";
 import { loadCube } from "./scenes/CubeScene";
 import { loadTableScene } from "./scenes/TableScene";
+import { transitionBetweenMeshes } from "../core/TransitionManager";
 
 export type ModelType = "cube" | "table";
 
@@ -37,6 +37,7 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
     sceneRef.current = scene;
 
     const camera = new ArcRotateCamera("camera", Math.PI / 2, Math.PI / 3, 6, Vector3.Zero(), scene);
+    camera.setPosition(new Vector3(0, 250, 500));
     camera.attachControl(canvasRef.current!, true);
 
     new HemisphericLight("light", new Vector3(0, 1, 0), scene);
@@ -51,22 +52,28 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
     if (!sceneRef.current || !model) return;
 
     const loadModel = async () => {
-      if (meshRef.current) meshRef.current.dispose();
-
       const scene = sceneRef.current!;
 
-      if (model === "cube") {
-        const { mesh, material } = loadCube(scene); // ✅ CORRECTION ICI
-        meshRef.current = mesh;
-        multiMatRef.current = material;
-        onPartsUpdate(["face0", "face1", "face2", "face3", "face4", "face5"]);
-      } else if (model === "table") {
-        const mesh = await loadTableScene(scene);
-        meshRef.current = mesh;
-        multiMatRef.current = null;
-        const parts = mesh.getChildMeshes().map((m) => m.name);
-        onPartsUpdate(parts);
-      }
+      const newMesh = await transitionBetweenMeshes({
+        scene,
+        oldMesh: meshRef.current ?? null, // null au tout début
+        loadNewMeshFn: async () => {
+          if (model === "cube") {
+            const { mesh, material } = loadCube(scene);
+            multiMatRef.current = material;
+            onPartsUpdate(["face0", "face1", "face2", "face3", "face4", "face5"]);
+            return mesh;
+          } else {
+            const mesh = await loadTableScene(scene);
+            multiMatRef.current = null;
+            const parts = mesh.getChildMeshes().map((m) => m.name);
+            onPartsUpdate(parts);
+            return mesh;
+          }
+        },
+      });
+
+      meshRef.current = newMesh;
     };
 
     loadModel();
@@ -76,7 +83,6 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
     if (!sceneRef.current || !meshRef.current || !part || !texture) return;
     const scene = sceneRef.current;
 
-    // Crée un matériau en fonction du nom
     const material = new StandardMaterial(`mat-${texture}`, scene);
     switch (texture) {
       case "red":

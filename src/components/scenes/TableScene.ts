@@ -5,6 +5,7 @@ import "@babylonjs/loaders";
 export async function loadTableScene(scene: Scene) {
   const result = await SceneLoader.ImportMeshAsync("", "/models/", "Table.glb", scene);
   const root = result.meshes[0];
+  root.position.set(0, 0, 5); 
   root.name = "tableRoot";
   return root;
 }
