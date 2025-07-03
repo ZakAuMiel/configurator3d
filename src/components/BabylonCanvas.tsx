@@ -1,31 +1,34 @@
-import { useEffect, useRef } from "react";
+// src/components/BabylonCanvas.tsx
+import { useEffect, useRef, useState } from "react";
 import {
   Engine,
   Scene,
   ArcRotateCamera,
   Vector3,
   HemisphericLight,
-  MeshBuilder,
   StandardMaterial,
   Color3,
   Texture,
-  MultiMaterial,
-  SubMesh,
 } from "@babylonjs/core";
-import "@babylonjs/loaders";
+import { loadCube } from "./scenes/CubeScene";
 
-interface BabylonCanvasProps {
+type BabylonCanvasProps = {
+  model: string;
   texture: string;
   part: string;
-}
+};
 
-export default function BabylonCanvas({ texture, part }: BabylonCanvasProps) {
+export default function BabylonCanvas({ model, texture, part }: BabylonCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sceneRef = useRef<Scene | null>(null);
-  const multiMatRef = useRef<MultiMaterial | null>(null);
+  const engineRef = useRef<Engine | null>(null);
+  const meshRef = useRef<any>(null);
+  const [multiMat, setMultiMat] = useState<any>(null);
 
   useEffect(() => {
     const engine = new Engine(canvasRef.current, true);
+    engineRef.current = engine;
+
     const scene = new Scene(engine);
     sceneRef.current = scene;
 
@@ -34,28 +37,6 @@ export default function BabylonCanvas({ texture, part }: BabylonCanvasProps) {
 
     new HemisphericLight("light", new Vector3(0, 1, 0), scene);
 
-    const redMat = new StandardMaterial("red", scene);
-    redMat.diffuseColor = Color3.Red();
-
-    const greenMat = new StandardMaterial("green", scene);
-    greenMat.diffuseColor = Color3.Green();
-
-    const woodMat = new StandardMaterial("wood", scene);
-    woodMat.diffuseTexture = new Texture("https://assets.babylonjs.com/environments/wood.jpg", scene);
-
-    const multiMat = new MultiMaterial("multi", scene);
-    multiMat.subMaterials.push(redMat, redMat, redMat, redMat, redMat, redMat);
-    multiMatRef.current = multiMat;
-
-    const box = MeshBuilder.CreateBox("box", { size: 2 }, scene);
-    box.material = multiMat;
-
-    box.subMeshes = [];
-    const verticesCount = box.getTotalVertices();
-    for (let i = 0; i < 6; i++) {
-      SubMesh.AddToMesh(i, 0, verticesCount, i * 6, 6, box);
-    }
-
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
 
@@ -63,7 +44,23 @@ export default function BabylonCanvas({ texture, part }: BabylonCanvasProps) {
   }, []);
 
   useEffect(() => {
-    if (!multiMatRef.current || !sceneRef.current) return;
+    if (!sceneRef.current || !model) return;
+
+    // Remove previous mesh
+    if (meshRef.current) {
+      meshRef.current.dispose();
+    }
+
+    // Load appropriate scene model
+    if (model === "cube") {
+      const { mesh, material } = loadCube(sceneRef.current);
+      meshRef.current = mesh;
+      setMultiMat(material);
+    }
+  }, [model]);
+
+  useEffect(() => {
+    if (!multiMat || !sceneRef.current) return;
 
     const scene = sceneRef.current;
     let newMat = null;
@@ -81,9 +78,10 @@ export default function BabylonCanvas({ texture, part }: BabylonCanvasProps) {
 
     const faceIndex = parseInt(part.replace("face", ""));
     if (!isNaN(faceIndex)) {
-      multiMatRef.current.subMaterials[faceIndex] = newMat;
+      multiMat.subMaterials[faceIndex] = newMat;
     }
-  }, [texture, part]);
+  }, [texture, part, multiMat]);
 
   return <canvas ref={canvasRef} className="w-full h-screen" />;
 }
+

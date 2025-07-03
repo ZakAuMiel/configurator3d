@@ -1,4 +1,4 @@
-import { useState } from "react";
+import  { useState } from "react";
 import BabylonCanvas from "./components/BabylonCanvas";
 import UIControls from "./components/UIControls";
 
@@ -8,7 +8,7 @@ function App() {
   const [part, setPart] = useState("face0");
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex h-screen">
       <BabylonCanvas model={model} texture={texture} part={part} />
       <UIControls
         onModelChange={setModel}
