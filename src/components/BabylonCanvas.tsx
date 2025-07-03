@@ -27,6 +27,7 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
   const sceneRef = useRef<Scene | null>(null);
   const engineRef = useRef<Engine | null>(null);
   const meshRef = useRef<any>(null);
+  const multiMatRef = useRef<any>(null);
 
   useEffect(() => {
     const engine = new Engine(canvasRef.current!, true);
@@ -50,19 +51,19 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
     if (!sceneRef.current || !model) return;
 
     const loadModel = async () => {
-      if (meshRef.current) {
-        meshRef.current.dispose();
-      }
+      if (meshRef.current) meshRef.current.dispose();
 
       const scene = sceneRef.current!;
 
       if (model === "cube") {
-        const { mesh } = loadCube(scene);
+        const { mesh, material } = loadCube(scene); // ✅ CORRECTION ICI
         meshRef.current = mesh;
+        multiMatRef.current = material;
         onPartsUpdate(["face0", "face1", "face2", "face3", "face4", "face5"]);
       } else if (model === "table") {
         const mesh = await loadTableScene(scene);
         meshRef.current = mesh;
+        multiMatRef.current = null;
         const parts = mesh.getChildMeshes().map((m) => m.name);
         onPartsUpdate(parts);
       }
@@ -74,11 +75,9 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
   useEffect(() => {
     if (!sceneRef.current || !meshRef.current || !part || !texture) return;
     const scene = sceneRef.current;
-    const mesh = scene.getMeshByName(part);
-    if (!mesh) return;
 
+    // Crée un matériau en fonction du nom
     const material = new StandardMaterial(`mat-${texture}`, scene);
-
     switch (texture) {
       case "red":
         material.diffuseColor = Color3.Red();
@@ -94,7 +93,20 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
         break;
     }
 
-    mesh.material = material;
+    // 👉 Cube : changer subMaterial d’une face
+    if (model === "cube" && multiMatRef.current) {
+      const faceIndex = parseInt(part.replace("face", ""));
+      if (!isNaN(faceIndex)) {
+        multiMatRef.current.subMaterials[faceIndex] = material;
+        return;
+      }
+    }
+
+    // 👉 Table : appliquer directement au mesh
+    const targetMesh = scene.getMeshByName(part);
+    if (targetMesh) {
+      targetMesh.material = material;
+    }
   }, [texture, part, model]);
 
   return <canvas ref={canvasRef} className="w-full h-screen" />;

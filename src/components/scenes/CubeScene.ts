@@ -1,24 +1,26 @@
+// src/components/scenes/CubeScene.ts
 import {
     MeshBuilder,
-    MultiMaterial,
+    Scene,
     StandardMaterial,
     Color3,
+    MultiMaterial,
     SubMesh,
-    Scene,
   } from "@babylonjs/core";
   
   export function loadCube(scene: Scene) {
-    const redMat = new StandardMaterial("red", scene);
+    const box = MeshBuilder.CreateBox("box", { size: 2 }, scene);
+  
+    // Créer 6 matériaux identiques par défaut (rouges)
+    const redMat = new StandardMaterial("mat-red", scene);
     redMat.diffuseColor = Color3.Red();
   
-    const multiMat = new MultiMaterial("multi", scene);
-    for (let i = 0; i < 6; i++) {
-      multiMat.subMaterials.push(redMat);
-    }
+    const multiMat = new MultiMaterial("multiMat", scene);
+    multiMat.subMaterials = [redMat, redMat, redMat, redMat, redMat, redMat];
   
-    const box = MeshBuilder.CreateBox("box", { size: 2 }, scene);
     box.material = multiMat;
   
+    // Diviser le mesh en 6 sous-meshes (1 par face)
     box.subMeshes = [];
     const verticesCount = box.getTotalVertices();
     for (let i = 0; i < 6; i++) {
@@ -27,3 +29,4 @@ import {
   
     return { mesh: box, material: multiMat };
   }
+  
