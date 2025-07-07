@@ -1,3 +1,5 @@
+// src/components/BabylonCanvas.tsx
+
 import { useEffect, useRef } from "react";
 import {
   Engine,
@@ -8,82 +10,55 @@ import {
   StandardMaterial,
   Color3,
   Texture,
+  AbstractMesh,
 } from "@babylonjs/core";
-import { loadCube } from "./scenes/CubeScene";
-import { loadTableScene } from "./scenes/TableScene";
-import { transitionBetweenMeshes } from "../core/TransitionManager";
-
-export type ModelType = "cube" | "table";
+import "@babylonjs/loaders";
+import { loadKitchenScene } from "./scenes/loadKitchenScene"; // Assurez-vous que ce chemin est correct
 
 type BabylonCanvasProps = {
-  model: ModelType;
   texture: string;
   part: string;
   onPartsUpdate: (parts: string[]) => void;
 };
 
-export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: BabylonCanvasProps) {
+export default function BabylonCanvas({ texture, part, onPartsUpdate }: BabylonCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sceneRef = useRef<Scene | null>(null);
   const engineRef = useRef<Engine | null>(null);
-  const meshRef = useRef<any>(null);
-  const multiMatRef = useRef<any>(null);
+  const meshesRef = useRef<AbstractMesh[]>([]);
 
   useEffect(() => {
     const engine = new Engine(canvasRef.current!, true);
-    engineRef.current = engine;
-
     const scene = new Scene(engine);
     sceneRef.current = scene;
+    engineRef.current = engine;
 
-    const camera = new ArcRotateCamera("camera", Math.PI / 2, Math.PI / 3, 6, Vector3.Zero(), scene);
-    camera.setPosition(new Vector3(0, 250, 500));
+    const camera = new ArcRotateCamera("camera", Math.PI / 2, Math.PI / 3, 10, new Vector3(0, 1, 0), scene);
     camera.attachControl(canvasRef.current!, true);
-
     new HemisphericLight("light", new Vector3(0, 1, 0), scene);
 
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
 
-    return () => engine.dispose();
+    // Charger la scène Kitchen
+    loadKitchenScene(scene).then((meshes) => {
+      meshesRef.current = meshes;
+      onPartsUpdate(meshes.map((mesh) => mesh.name));
+    });
+
+    return () => {
+      engine.dispose();
+    };
   }, []);
 
   useEffect(() => {
-    if (!sceneRef.current || !model) return;
+    if (!sceneRef.current || !part || !texture) return;
 
-    const loadModel = async () => {
-      const scene = sceneRef.current!;
+    const mesh = sceneRef.current.getMeshByName(part);
+    if (!mesh) return;
 
-      const newMesh = await transitionBetweenMeshes({
-        scene,
-        oldMesh: meshRef.current ?? null, // null au tout début
-        loadNewMeshFn: async () => {
-          if (model === "cube") {
-            const { mesh, material } = loadCube(scene);
-            multiMatRef.current = material;
-            onPartsUpdate(["face0", "face1", "face2", "face3", "face4", "face5"]);
-            return mesh;
-          } else {
-            const mesh = await loadTableScene(scene);
-            multiMatRef.current = null;
-            const parts = mesh.getChildMeshes().map((m) => m.name);
-            onPartsUpdate(parts);
-            return mesh;
-          }
-        },
-      });
+    const material = new StandardMaterial(`mat-${texture}`, sceneRef.current);
 
-      meshRef.current = newMesh;
-    };
-
-    loadModel();
-  }, [model]);
-
-  useEffect(() => {
-    if (!sceneRef.current || !meshRef.current || !part || !texture) return;
-    const scene = sceneRef.current;
-
-    const material = new StandardMaterial(`mat-${texture}`, scene);
     switch (texture) {
       case "red":
         material.diffuseColor = Color3.Red();
@@ -92,28 +67,15 @@ export default function BabylonCanvas({ model, texture, part, onPartsUpdate }: B
         material.diffuseColor = Color3.Green();
         break;
       case "wood":
-        material.diffuseTexture = new Texture("/textures/wood-diffuse_124.jpg", scene);
+        material.diffuseTexture = new Texture("/textures/wood-diffuse_124.jpg", sceneRef.current);
         break;
       case "metal":
-        material.diffuseTexture = new Texture("/textures/metal_basecolor.jpg", scene);
+        material.diffuseTexture = new Texture("/textures/metal_basecolor.jpg", sceneRef.current);
         break;
     }
 
-    // 👉 Cube : changer subMaterial d’une face
-    if (model === "cube" && multiMatRef.current) {
-      const faceIndex = parseInt(part.replace("face", ""));
-      if (!isNaN(faceIndex)) {
-        multiMatRef.current.subMaterials[faceIndex] = material;
-        return;
-      }
-    }
-
-    // 👉 Table : appliquer directement au mesh
-    const targetMesh = scene.getMeshByName(part);
-    if (targetMesh) {
-      targetMesh.material = material;
-    }
-  }, [texture, part, model]);
+    mesh.material = material;
+  }, [texture, part]);
 
   return <canvas ref={canvasRef} className="w-full h-screen" />;
 }
